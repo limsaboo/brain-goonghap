@@ -148,12 +148,65 @@ padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;}
 .sri-name{font-size:14px;font-weight:700;color:var(--tx);}
 .sri-info{font-size:11px;color:var(--tx2);margin-top:3px;}
 .sri-grade{font-size:18px;font-weight:900;color:var(--gold2);float:right;}
+
+.coupon-screen{width:100%;max-width:480px;padding:20px 18px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box;}
+.coupon-box{background:var(--bg3);border:1.5px solid var(--gold);border-radius:14px;padding:16px;}
+.coupon-title{font-size:16px;font-weight:800;color:var(--gold2);margin-bottom:4px;}
+.coupon-sub{font-size:12px;color:var(--tx2);margin-bottom:12px;line-height:1.6;}
+.coupon-input-row{display:flex;gap:8px;}
+.coupon-input-row .fi{flex:1;font-size:14px;letter-spacing:2px;text-transform:uppercase;}
+.coupon-btn{padding:12px 16px;background:var(--gold);color:#07091a;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;}
+.coupon-info{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:12px;margin-top:8px;display:none;}
+.coupon-info.show{display:block;}
+.coupon-remain{font-size:20px;font-weight:900;color:var(--gold2);}
+.coupon-type-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-left:6px;}
+.badge-free{background:rgba(129,199,132,.2);color:#81c784;border:1px solid #81c784;}
+.badge-paid{background:rgba(79,195,247,.2);color:#4fc3f7;border:1px solid #4fc3f7;}
+.btn-coupon-confirm{width:100%;padding:14px;background:linear-gradient(135deg,#1a2070,#0d0f3a);border:1.5px solid var(--gold);border-radius:12px;color:var(--gold2);font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;}
 </style>
 </head>
 <body>
 
+<!-- S0 쿠폰입력 -->
+<div id="s0" class="screen active">
+  <div class="coupon-screen">
+    <div style="text-align:center;margin-bottom:4px;">
+      <div style="font-size:32px;margin-bottom:8px;">🧠</div>
+      <div style="font-size:20px;font-weight:900;color:var(--gold2);">뇌궁합 진단 시스템</div>
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px;">한국뇌심리연구소 | 임찬우 소장</div>
+    </div>
+
+    <div class="coupon-box">
+      <div class="coupon-title">🎟 쿠폰 번호 입력</div>
+      <div class="coupon-sub">진단을 시작하려면 쿠폰 번호가 필요합니다.<br>쿠폰 구매 문의: brain.saboo@gmail.com</div>
+      <div class="coupon-input-row">
+        <input type="text" class="fi" id="couponInput" placeholder="쿠폰번호 입력" maxlength="20">
+        <button class="coupon-btn" id="btnCheckCoupon">확인</button>
+      </div>
+      <div class="coupon-info" id="couponInfo">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:var(--tx);" id="couponBuyerName"></span>
+          <span class="coupon-type-badge" id="couponTypeBadge"></span>
+        </div>
+        <div style="font-size:12px;color:var(--tx2);margin-bottom:4px;">잔여 횟수</div>
+        <div class="coupon-remain" id="couponRemain"></div>
+        <div style="font-size:11px;color:var(--tx2);margin-top:4px;" id="couponExpire"></div>
+        <button class="btn-coupon-confirm" id="btnCouponConfirm">이 쿠폰으로 진단 시작하기 →</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:8px 0;">
+      <div style="font-size:11px;color:var(--tx2);line-height:1.8;">
+        💬 카톡 오픈채팅으로 쿠폰 문의<br>
+        📧 brain.saboo@gmail.com<br>
+        📺 뇌과학&amp;심리 임찬우TV
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- S1 -->
-<div id="s1" class="screen active">
+<div id="s1" class="screen">
   <div class="intro-orb">🧠</div>
   <div class="cont" style="gap:8px;">
     <div>
@@ -564,6 +617,12 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   document.getElementById("btnStart").addEventListener("click", function(){go("s2");});
+  document.getElementById("btnCheckCoupon").addEventListener("click", checkCoupon);
+  document.getElementById("btnCouponConfirm").addEventListener("click", startWithCoupon);
+  // 쿠폰 입력창 엔터키
+  document.getElementById("couponInput").addEventListener("keydown", function(e){
+    if(e.key==="Enter") checkCoupon();
+  });
   // 생년/생월 실시간 만나이 계산
   function updateAgeDisplay(p) {
     var yr = document.getElementById("birthYear"+p);
@@ -613,6 +672,17 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("btnPrint").addEventListener("click", doPrint);
   document.getElementById("btnShare").addEventListener("click", function(){document.getElementById("shareModal").classList.add("open");});
   document.getElementById("btnRestart").addEventListener("click", restart);
+  document.getElementById("btnIssueCoupon").addEventListener("click", issueCoupon);
+  // 관리자 도구: 저작권 텍스트 5번 연속 클릭
+  var _adminTap = 0, _adminTimer;
+  document.querySelectorAll(".cp5").forEach(function(el){
+    el.addEventListener("click", function(){
+      _adminTap++;
+      clearTimeout(_adminTimer);
+      if(_adminTap >= 5) { _adminTap=0; openAdminTool(); }
+      _adminTimer = setTimeout(function(){ _adminTap=0; }, 2000);
+    });
+  });
   document.getElementById("modalClose").addEventListener("click", function(){document.getElementById("shareModal").classList.remove("open");});
   document.getElementById("sh1").addEventListener("click", function(){shareKakao();});
   document.getElementById("sh2").addEventListener("click", function(){shareInsta();});
@@ -1001,6 +1071,11 @@ function showResult() {
     document.getElementById("aiText").textContent=ai3;
   } else {
     document.getElementById("aiText").textContent=buildAnalysis(sA,sB,sim,type);
+  }
+  // 쿠폰 사용 처리
+  if(_coupon) {
+    var displayA = useCoupon(state.A.name, "goonghap", null);
+    if(displayA) state.A.displayName = displayA;
   }
   go("s7");
   setTimeout(function(){
@@ -1537,6 +1612,106 @@ function drawRadarTriple(sA, sB, sC, keys) {
 }
 
 
+
+// ── 쿠폰 시스템 ──
+var _coupon = null; // 현재 사용 중인 쿠폰 정보
+
+function checkCoupon() {
+  var code = document.getElementById("couponInput").value.trim().toUpperCase();
+  if(!code) { showToast("쿠폰 번호를 입력해주세요"); return; }
+
+  showToast("쿠폰 확인 중...");
+
+  supaFetch("/rest/v1/coupons?coupon_code=eq." + encodeURIComponent(code)
+    + "&is_active=eq.true&select=*")
+    .then(function(rows) {
+      if(!rows || rows.length === 0) {
+        showToast("❌ 유효하지 않은 쿠폰입니다");
+        return;
+      }
+      var c = rows[0];
+
+      // 만료일 확인
+      if(c.expire_date && new Date(c.expire_date) < new Date()) {
+        showToast("❌ 만료된 쿠폰입니다");
+        return;
+      }
+      // 잔여 횟수 확인
+      if(c.remain_count <= 0) {
+        showToast("❌ 사용 횟수가 모두 소진된 쿠폰입니다");
+        return;
+      }
+
+      _coupon = c;
+
+      // 쿠폰 정보 표시
+      var isFree = c.coupon_type === "free";
+      var nameEl = document.getElementById("couponBuyerName");
+      nameEl.textContent = c.buyer_name || "미확인";
+
+      var badge = document.getElementById("couponTypeBadge");
+      badge.textContent = isFree ? "무료 증정" : "유료 구매";
+      badge.className = "coupon-type-badge " + (isFree ? "badge-free" : "badge-paid");
+
+      document.getElementById("couponRemain").textContent = c.remain_count + "회 남음";
+
+      var expEl = document.getElementById("couponExpire");
+      if(c.expire_date) {
+        expEl.textContent = "만료일: " + new Date(c.expire_date).toLocaleDateString("ko-KR");
+      } else {
+        expEl.textContent = "만료일: 무제한";
+      }
+
+      document.getElementById("couponInfo").classList.add("show");
+      showToast("✅ 유효한 쿠폰입니다!");
+    }).catch(function(e) {
+      showToast("오류: " + e.message);
+    });
+}
+
+function startWithCoupon() {
+  if(!_coupon) { showToast("쿠폰을 먼저 확인해주세요"); return; }
+  if(_coupon.remain_count <= 0) { showToast("잔여 횟수가 없습니다"); return; }
+  go("s1");
+}
+
+function useCoupon(examineeName, systemType, diagnosisId) {
+  if(!_coupon) return;
+
+  var isFree = _coupon.coupon_type === "free";
+  // 무료 쿠폰이면 이름 뒤에 (무료 N회*) 표시
+  var displayName = isFree
+    ? examineeName + " (무료 " + _coupon.remain_count + "회*)"
+    : examineeName;
+
+  // 쿠폰 사용 횟수 차감
+  var newRemain = _coupon.remain_count - 1;
+  var newUsed   = _coupon.used_count + 1;
+
+  // coupons 테이블 업데이트
+  supaFetch("/rest/v1/coupons?coupon_code=eq." + encodeURIComponent(_coupon.coupon_code),
+    "PATCH",
+    { remain_count: newRemain, used_count: newUsed }
+  ).then(function() {
+    _coupon.remain_count = newRemain;
+    _coupon.used_count   = newUsed;
+  });
+
+  // coupon_usage 이력 기록
+  supaFetch("/rest/v1/coupon_usage", "POST", {
+    coupon_code:      _coupon.coupon_code,
+    coupon_type:      _coupon.coupon_type,
+    buyer_type:       _coupon.buyer_type,
+    examinee_name:    examineeName,
+    examinee_display: displayName,
+    system_type:      systemType || "goonghap",
+    diagnosis_id:     diagnosisId || null,
+    remain_after:     newRemain
+  });
+
+  return displayName;
+}
+
 // ── Supabase 연동 ──
 var SUPA_URL = "https://grxqfaeznqqohnlltged.supabase.co";
 var SUPA_KEY = "sb_publishable_Sgv6BVPo1dOnVICcX1tfzA_gf7T5Z4I";
@@ -1679,6 +1854,84 @@ function loadAndShowResult(r) {
 
   showResult();
   showToast("📂 기록을 불러왔습니다!");
+}
+
+
+// ── 관리자 쿠폰 발행 ──
+var _adminPass = "brain2025!"; // 관리자 비밀번호
+var _adminUnlocked = false;
+
+function openAdminTool() {
+  if(!_adminUnlocked) {
+    var pw = prompt("관리자 비밀번호를 입력하세요:");
+    if(pw !== _adminPass) { showToast("비밀번호가 틀렸습니다"); return; }
+    _adminUnlocked = true;
+  }
+  document.getElementById("adminModal").style.display = "flex";
+  document.getElementById("issuedCouponResult").style.display = "none";
+}
+
+function generateCouponCode() {
+  // 형식: BG-YYYYMMDD-XXXX (뇌궁합 전용은 BG, 전체는 BR)
+  var d = new Date();
+  var date = d.getFullYear().toString().slice(2)
+    + String(d.getMonth()+1).padStart(2,"0")
+    + String(d.getDate()).padStart(2,"0");
+  var rand = Math.random().toString(36).substring(2,6).toUpperCase();
+  return "BR-" + date + "-" + rand;
+}
+
+function issueCoupon() {
+  var name    = document.getElementById("adminBuyerName").value.trim();
+  var type    = document.getElementById("adminBuyerType").value;
+  var contact = document.getElementById("adminContact").value.trim();
+  var uses    = parseInt(document.getElementById("adminUses").value);
+  var system  = document.getElementById("adminSystem").value;
+  var amount  = parseInt(document.getElementById("adminAmount").value) || 0;
+  var memo    = document.getElementById("adminMemo").value.trim();
+
+  if(!name) { showToast("수령자 이름을 입력하세요"); return; }
+
+  var code = generateCouponCode();
+  var isFree = type === "free_gift";
+
+  // 만료일: 1년 후
+  var expire = new Date();
+  expire.setFullYear(expire.getFullYear() + 1);
+
+  var data = {
+    coupon_code:     code,
+    coupon_type:     isFree ? "free" : "paid",
+    buyer_name:      name,
+    buyer_type:      type,
+    buyer_contact:   contact,
+    buyer_memo:      memo,
+    total_uses:      uses,
+    used_count:      0,
+    remain_count:    uses,
+    system_type:     system,
+    purchase_amount: amount,
+    expire_date:     expire.toISOString(),
+    is_active:       true,
+    issued_by:       "임찬우소장"
+  };
+
+  showToast("쿠폰 발행 중...");
+  supaFetch("/rest/v1/coupons", "POST", data)
+    .then(function(res) {
+      if(res && res[0] && res[0].id) {
+        document.getElementById("issuedCode").textContent = code;
+        document.getElementById("issuedCouponResult").style.display = "block";
+        showToast("✅ 쿠폰 발행 완료!");
+        // 입력 초기화
+        document.getElementById("adminBuyerName").value = "";
+        document.getElementById("adminContact").value = "";
+        document.getElementById("adminMemo").value = "";
+        document.getElementById("adminAmount").value = "";
+      } else {
+        showToast("발행 실패"); console.log(res);
+      }
+    }).catch(function(e){ showToast("오류: "+e.message); });
 }
 
 function doPrint(){
@@ -2417,5 +2670,58 @@ function doPrint(){
 
 
 </script>
+
+<!-- 관리자 쿠폰 발행 도구 (숨김) -->
+<div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;align-items:center;justify-content:center;">
+  <div style="width:90%;max-width:420px;background:var(--bg2);border:1.5px solid var(--gold);border-radius:16px;padding:20px;">
+    <div style="font-size:16px;font-weight:800;color:var(--gold2);margin-bottom:14px;">🔐 쿠폰 발행 (소장님 전용)</div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div><label class="fl">수령자 이름</label><input type="text" class="fi" id="adminBuyerName" placeholder="홍길동"></div>
+      <div><label class="fl">구분</label>
+        <select class="fi" id="adminBuyerType">
+          <option value="free_gift">무료 증정</option>
+          <option value="personal">개인 구매</option>
+          <option value="company">기업</option>
+          <option value="group">단체</option>
+          <option value="education">교육기관</option>
+        </select>
+      </div>
+      <div><label class="fl">연락처</label><input type="text" class="fi" id="adminContact" placeholder="010-0000-0000"></div>
+      <div><label class="fl">횟수</label>
+        <select class="fi" id="adminUses">
+          <option value="1">1회</option>
+          <option value="3">3회</option>
+          <option value="5">5회</option>
+          <option value="10">10회</option>
+          <option value="30">30회</option>
+          <option value="50">50회</option>
+          <option value="100">100회</option>
+          <option value="500">500회</option>
+        </select>
+      </div>
+      <div><label class="fl">대상 시스템</label>
+        <select class="fi" id="adminSystem">
+          <option value="all">전체 4종</option>
+          <option value="goonghap">뇌궁합</option>
+          <option value="personality">뇌심리성향</option>
+          <option value="condition">뇌컨디션</option>
+          <option value="career">진로적성</option>
+        </select>
+      </div>
+      <div><label class="fl">구매금액 (원)</label><input type="number" class="fi" id="adminAmount" placeholder="0 (무료증정은 0)"></div>
+      <div><label class="fl">메모</label><input type="text" class="fi" id="adminMemo" placeholder="참고사항"></div>
+    </div>
+
+    <button class="btn-primary" id="btnIssueCoupon" style="margin-top:12px;">쿠폰 발행하기</button>
+    <div id="issuedCouponResult" style="display:none;margin-top:10px;background:rgba(201,168,76,.1);border:1px solid var(--gold);border-radius:10px;padding:12px;">
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:4px;">발행된 쿠폰 번호</div>
+      <div id="issuedCode" style="font-size:22px;font-weight:900;color:var(--gold2);letter-spacing:3px;"></div>
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px;">위 번호를 수령자에게 전달하세요</div>
+    </div>
+    <button onclick="document.getElementById('adminModal').style.display='none'" style="width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--tx2);margin-top:8px;cursor:pointer;">닫기</button>
+  </div>
+</div>
+
 </body>
 </html>
