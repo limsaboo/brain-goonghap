@@ -179,6 +179,10 @@ padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;}
     <div class="coupon-box">
       <div class="coupon-title">🎟 쿠폰 번호 입력</div>
       <div class="coupon-sub">진단을 시작하려면 쿠폰 번호가 필요합니다.<br>쿠폰 구매 문의: brain.saboo@gmail.com</div>
+      <!-- 소장님 전용 바로 입장 -->
+      <div id="adminLoginRow" style="margin-bottom:10px;">
+        <button id="btnAdminLogin" style="width:100%;padding:10px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:10px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">🔐 관리자 입장</button>
+      </div>
       <div class="coupon-input-row">
         <input type="text" class="fi" id="couponInput" placeholder="쿠폰번호 입력" maxlength="20">
         <button class="coupon-btn" id="btnCheckCoupon">확인</button>
@@ -673,6 +677,7 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("btnShare").addEventListener("click", function(){document.getElementById("shareModal").classList.add("open");});
   document.getElementById("btnRestart").addEventListener("click", restart);
   document.getElementById("btnIssueCoupon").addEventListener("click", issueCoupon);
+  document.getElementById("btnAdminLogin").addEventListener("click", adminLogin);
   // 관리자 도구: 저작권 텍스트 5번 연속 클릭
   var _adminTap = 0, _adminTimer;
   document.querySelectorAll(".cp5").forEach(function(el){
@@ -1677,6 +1682,8 @@ function startWithCoupon() {
 
 function useCoupon(examineeName, systemType, diagnosisId) {
   if(!_coupon) return;
+  // 관리자 모드는 차감 없음
+  if(_coupon.coupon_type === "admin") return examineeName;
 
   var isFree = _coupon.coupon_type === "free";
   // 무료 쿠폰이면 이름 뒤에 (무료 N회*) 표시
@@ -1860,6 +1867,30 @@ function loadAndShowResult(r) {
 // ── 관리자 쿠폰 발행 ──
 var _adminPass = "brain2025!"; // 관리자 비밀번호
 var _adminUnlocked = false;
+
+function adminLogin() {
+  var pw = prompt("관리자 비밀번호:");
+  if(!pw) return;
+  if(pw === _adminPass) {
+    _adminUnlocked = true;
+    // 쿠폰 없이 바로 진단 시작
+    _coupon = {
+      coupon_code: "ADMIN-FREE",
+      coupon_type: "admin",
+      buyer_name: "임찬우소장",
+      buyer_type: "admin",
+      total_uses: 9999,
+      used_count: 0,
+      remain_count: 9999,
+      system_type: "all",
+      is_active: true
+    };
+    showToast("✅ 소장님 입장! 쿠폰 무제한 사용");
+    go("s1");
+  } else {
+    showToast("❌ 비밀번호가 틀렸습니다");
+  }
+}
 
 function openAdminTool() {
   if(!_adminUnlocked) {
