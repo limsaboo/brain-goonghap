@@ -1764,6 +1764,14 @@ function useCoupon(examineeName, systemType, diagnosisId) {
     remain_after:     newRemain
   });
 
+  notifyCouponUse({
+    systemName: "뇌궁합",
+    couponCode: _coupon.coupon_code,
+    couponType: _coupon.coupon_type,
+    buyerMemo: _coupon.buyer_memo,
+    remainAfter: newRemain
+  });
+
   return displayName;
 }
 
@@ -1782,6 +1790,33 @@ function supaFetch(path, method, body) {
     },
     body: body ? JSON.stringify(body) : undefined
   }).then(function(r){ return r.json(); });
+}
+
+// ── 텔레그램 쿠폰 사용 알림 ──
+var TG_BOT_TOKEN = "8837564107:AAGmu99kf9sfijKcWBQxTxR3WplWmeb99to";
+var TG_CHAT_ID = "8767965326";
+
+function notifyCouponUse(opts) {
+  var typeLabel = opts.couponType === "free" ? "🎁 무료쿠폰"
+                : opts.couponType === "admin" ? "🛠 관리자쿠폰"
+                : "💳 유료쿠폰";
+  var now = new Date().toLocaleString("ko-KR", {timeZone:"Asia/Seoul"});
+  var lines = [
+    typeLabel + " 사용 알림",
+    "",
+    "시스템: " + (opts.systemName || "뇌궁합"),
+    "쿠폰코드: " + opts.couponCode,
+    opts.buyerMemo ? ("발급목적: " + opts.buyerMemo) : null,
+    "잔여횟수: " + opts.remainAfter + "회",
+    "사용시각: " + now
+  ].filter(function(v){ return v; }).join("\n");
+
+  var url = "https://api.telegram.org/bot" + TG_BOT_TOKEN + "/sendMessage";
+  fetch(url, {
+    method: "POST",
+    headers: {"Content-Type":"application/x-www-form-urlencoded"},
+    body: new URLSearchParams({chat_id: TG_CHAT_ID, text: lines})
+  }).catch(function(){ /* 알림 실패는 검사 진행에 영향 없음 */ });
 }
 
 function makeSearchCode() {
