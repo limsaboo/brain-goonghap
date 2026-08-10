@@ -1,1 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>뇌궁합 검사 시스템 | 한국뇌심리연구소</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#07091a;--bg2:#0d1030;--bg3:#111535;--gold:#c9a84c;--gold2:#f0d080;
+  --na:#4fc3f7;--nb:#f48fb1;--nc:#81c784;--nd:#f4a460;--ne:#e67e22;--neon:#a78bfa;
+  --tx:#e8eaf6;--tx2:#90939e;--border:rgba(201,168,76,.22);
+}
+html,body{min-height:100%;background:var(--bg);font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:var(--tx);overflow-x:hidden;}
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;width:100%;overflow-x:hidden;}
+.screen.active{display:flex;}
+.topbar{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;padding:13px 18px;background:rgba(7,9,26,.92);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);}
+.tb-title{font-size:18px;font-weight:800;color:var(--gold);}
+.step-badge{font-size:11px;font-weight:700;color:var(--tx2);background:rgba(255,255,255,.07);padding:3px 9px;border-radius:20px;}
+.cont{width:100%;max-width:480px;padding:12px 18px 20px;display:flex;flex-direction:column;gap:10px;box-sizing:border-box;overflow:hidden;}
+.intro-orb{width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 38% 38%,#1a1f5e,#070918);border:2px solid var(--gold);box-shadow:0 0 30px rgba(167,139,250,.4);display:flex;align-items:center;justify-content:center;margin:16px auto 0;font-size:36px;}
+.intro-title{text-align:center;font-size:22px;font-weight:800;color:var(--gold2);line-height:1.2;letter-spacing:-1px;margin-top:10px;}
+.intro-divider{width:56px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:8px auto;}
+.intro-badge{text-align:center;font-size:11px;color:var(--neon);font-weight:600;letter-spacing:1px;}
+.intro-sub{text-align:center;font-size:13px;color:var(--tx2);line-height:1.6;margin-top:4px;}
+.btn-primary{width:100%;padding:20px;background:linear-gradient(135deg,#1a2070,#0d0f3a);border:2px solid var(--gold);border-radius:16px;color:var(--gold2);font-size:19px;font-weight:900;cursor:pointer;letter-spacing:.5px;transition:all .2s;}
+.btn-primary:active{opacity:.8;transform:scale(.98);}
+.pbar-wrap{width:100%;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;margin-bottom:14px;}
+.pbar{height:100%;background:linear-gradient(90deg,var(--gold),var(--neon));border-radius:3px;transition:width .3s;}
+.test-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:80px 18px 20px;}
+.test-card{width:100%;max-width:480px;background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:24px;text-align:center;}
+.img-area{width:100%;aspect-ratio:1/1;background:rgba(255,255,255,.03);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;overflow:hidden;}
+.img-area img{width:100%;height:100%;object-fit:cover;}
+.img-counter{font-size:13px;color:var(--tx2);margin-bottom:12px;font-weight:600;}
+.timer-display{font-size:24px;font-weight:900;color:var(--gold2);margin:12px 0;height:30px;}
+.timer-display.warning{color:#ff6b6b;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+.btn-group{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:16px;}
+.likert-btn{padding:12px 8px;background:var(--bg2);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;color:var(--tx);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;white-space:normal;line-height:1.3;}
+.likert-btn:disabled{opacity:.5;cursor:not-allowed;}
+.likert-btn:not(:disabled):active{transform:scale(.95);opacity:.8;}
+.likert-1{background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.4);color:#86efac;}
+.likert-2{background:rgba(132,204,22,.2);border-color:rgba(132,204,22,.4);color:#bef264;}
+.likert-3{background:rgba(107,114,128,.2);border-color:rgba(107,114,128,.4);color:#d1d5db;}
+.likert-4{background:rgba(249,115,22,.2);border-color:rgba(249,115,22,.4);color:#fed7aa;}
+.likert-5{background:rgba(220,38,38,.2);border-color:rgba(220,38,38,.4);color:#fca5a5;}
+.result-screen{padding-top:60px;padding-bottom:20px;}
+.r-hero{width:100%;max-width:480px;padding:26px 18px 18px;text-align:center;background:linear-gradient(180deg,rgba(167,139,250,.1),transparent);}
+.g-ring{width:130px;height:130px;border-radius:50%;border:4px solid var(--gold);background:radial-gradient(circle at 38% 38%,#1a1f5e,#07091a);box-shadow:0 0 36px rgba(167,139,250,.55);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.g-letter{font-size:52px;font-weight:900;color:var(--gold2);}
+.g-type{font-size:23px;font-weight:900;color:var(--gold2);margin-bottom:8px;}
+.g-score{font-size:14px;color:var(--tx2);margin-bottom:14px;}
+.g-score-n{font-size:42px;font-weight:900;color:var(--gold2);}
+.names-row{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
+.ntag{display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);color:var(--na);}
+.rsec{width:100%;max-width:480px;padding:0 18px;margin-top:14px;box-sizing:border-box;}
+.rsec-t{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.radar-wrap{display:flex;justify-content:center;margin-bottom:8px;height:280px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.bar-lbl{font-size:12px;color:var(--tx2);width:50px;flex-shrink:0;text-align:right;font-weight:600;}
+.bar-track{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width .3s;}
+.bar-val{font-size:12px;color:var(--tx);font-weight:700;width:30px;text-align:right;}
+.act-row{display:flex;gap:9px;margin-top:16px;}
+.act-btn{flex:1;padding:12px 6px;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid;text-align:center;background:transparent;}
+.btn-print{border-color:rgba(201,168,76,.45);color:var(--gold2);}
+.btn-restart{border-color:rgba(255,255,255,.18);color:var(--tx2);}
+</style>
+</head>
+<body>
 
+<!-- S0: 소개 -->
+<div id="s0" class="screen active">
+  <div class="topbar"><span class="tb-title">🧠 뇌궁합 검사</span><span class="step-badge">시작</span></div>
+  <div class="cont" style="margin-top:40px;">
+    <div style="text-align:center;">
+      <div class="intro-orb">🧠</div>
+      <div class="intro-title">뇌궁합 검사 시스템</div>
+      <div class="intro-divider"></div>
+      <div class="intro-badge">BRAIN COMPATIBILITY DIAGNOSIS</div>
+      <div class="intro-sub" style="margin-top:10px;line-height:1.8;">
+        <strong>이미지에 끌리는 대로 선택하세요</strong><br>
+        리커트 척도로 당신의 무의식을 읽습니다
+      </div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:20px;font-size:12px;color:var(--tx2);line-height:1.8;">
+      🧠 <b style="color:var(--gold);">완전 이미지 기반</b> 텍스트 질문 없음<br>
+      👥 <b style="color:var(--gold);">2~5인 비교</b> 가족 전체 뇌궁합<br>
+      📊 <b style="color:var(--gold);">5점 척도</b> 30개 이미지<br>
+      ⏱ <b style="color:var(--gold);">연령별 제한시간</b> 공정한 평가
+    </div>
+    <button class="btn-primary" onclick="go('s1')" style="margin-top:20px;">검사 시작하기 →</button>
+  </div>
+  <div style="width:100%;max-width:480px;text-align:center;padding:10px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--tx2);">
+    © 2026 Korea Brain Psychology Research Institute<br>
+    임찬우 소장 | brain.saboo@gmail.com
+  </div>
+</div>
+
+<!-- S1: 인원 선택 -->
+<div id="s1" class="screen">
+  <div class="topbar"><span class="tb-title">인원 선택</span><span class="step-badge">MODE</span></div>
+  <div class="cont">
+    <div>
+      <div style="font-size:19px;font-weight:900;color:var(--gold2);margin-bottom:4px;">검사 인원</div>
+      <div style="font-size:14px;color:var(--tx2);margin-bottom:16px;">비교할 사람의 수를 선택하세요</div>
+    </div>
+    <div style="background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;" onclick="setMode(2)">
+      <div style="font-size:24px;margin-bottom:6px;">👫</div>
+      <div style="font-size:16px;font-weight:800;color:var(--gold2);">2인 검사</div>
+      <div style="font-size:12px;color:var(--tx2);margin-top:4px;">두 사람의 뇌궁합 비교</div>
+    </div>
+    <div style="background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;" onclick="setMode(3)">
+      <div style="font-size:24px;margin-bottom:6px;">👨‍👩‍👦</div>
+      <div style="font-size:16px;font-weight:800;color:var(--gold2);">3인 검사</div>
+      <div style="font-size:12px;color:var(--tx2);margin-top:4px;">세 사람의 뇌궁합 분석</div>
+    </div>
+    <div style="background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;" onclick="setMode(5)">
+      <div style="font-size:24px;margin-bottom:6px;">👨‍👩‍👧‍👧</div>
+      <div style="font-size:16px;font-weight:800;color:var(--gold2);">5인 검사</div>
+      <div style="font-size:12px;color:var(--tx2);margin-top:4px;">가족 전체 뇌궁합 체크</div>
+    </div>
+  </div>
+</div>
+
+<!-- S2~S6: 개인정보 -->
+<div id="infoScreens"></div>
+
+<!-- S7~S36: 검사 -->
+<div id="testScreens"></div>
+
+<!-- S99: 결과 -->
+<div id="s99" class="screen result-screen">
+  <div class="topbar"><span class="tb-title">검사 결과</span><span class="step-badge">완료</span></div>
+  <div class="r-hero">
+    <div class="g-ring"><span class="g-letter" id="rGrade">A</span></div>
+    <div class="g-type" id="rType">뇌 시너지형</div>
+    <div class="g-score">궁합 지수 <span class="g-score-n" id="rScore">78</span><span style="font-size:13px;color:var(--tx2);">%</span></div>
+    <div class="names-row" id="rNames"></div>
+  </div>
+  <div class="rsec">
+    <div class="rsec-t">5개 영역 뇌성향 분석</div>
+    <div class="radar-wrap"><canvas id="radarChart" width="250" height="250"></canvas></div>
+  </div>
+  <div class="rsec">
+    <div class="rsec-t">영역별 점수</div>
+    <div id="barsArea"></div>
+  </div>
+  <div class="rsec">
+    <div class="act-row">
+      <button class="act-btn btn-print" onclick="window.print()">🖨️ 인쇄</button>
+      <button class="act-btn btn-restart" onclick="location.reload()">🔄 다시하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== 설정 ==========
+const AREAS = ['감정호합', '의사소통', '가치관', '생활방식', '성장목표'];
+const AREA_COLORS = {0:'#4fc3f7', 1:'#f48fb1', 2:'#81c784', 3:'#f4a460', 4:'#e67e22'};
+
+// GitHub Raw URL 기본 경로
+const GITHUB_BASE = 'https://raw.githubusercontent.com/limsaboo/brain-goonghap/main/assets/cards';
+
+// 연령별 제한시간
+const AGE_TIME_LIMIT = {
+  '10~20': 15, '21~30': 15, '31~40': 18, '41~50': 20, '51~60': 22, '61~99': 25
+};
+
+// 30개 이미지 매핑 (GitHub 경로 기반)
+// 감정호합(우뇌창의 front 상중하 + 우뇌구성 left 상중하) 
+// 의사소통(front 02 상중하 + left 01 상중하)
+// 가치관(front 03 상중하 + left 02 상중하)
+// 생활방식(front 04 상중하 + left 03 상중하)
+// 성장목표(front 05 상중하 + left 04 상중하)
+const IMAGE_FILENAMES = {
+  0: ['front_01_상.png', 'front_01_중.png', 'front_01_하.png', 'left_01_상.jpeg', 'left_01_중.jpeg', 'left_01_하.jpeg'],
+  1: ['front_02_상.png', 'front_02_중.png', 'front_02_하.png', 'left_02_상.jpeg', 'left_02_중.jpeg', 'left_02_하.jpeg'],
+  2: ['front_03_상.png', 'front_03_중.jpeg', 'front_03_하.jpeg', 'left_03_상.jpeg', 'left_03_중.jpeg', 'left_03_하.jpeg'],
+  3: ['front_04_상.jpeg', 'front_04_중.jpeg', 'front_04_하.jpeg', 'left_04_상.jpeg', 'left_04_중.jpeg', 'left_04_하.jpeg'],
+  4: ['front_05_상.png', 'front_05_중.png', 'front_05_하.png', 'left_05_상.jpeg', 'left_05_중.jpeg', 'left_05_하.jpeg']
+};
+
+function getImageUrl(area, imgIdx) {
+  const filename = IMAGE_FILENAMES[area]?.[imgIdx] || 'error.png';
+  return `${GITHUB_BASE}/${filename}`;
+}
+
+let state = {
+  numPeople: 2, people: {}, selections: {}, ageGroups: {}, 
+  currentTab: null, chartInstance: null, currentTimerInterval: null
+};
+
+function getAgeGroup(age) {
+  const a = parseInt(age);
+  if(a <= 20) return '10~20';
+  if(a <= 30) return '21~30';
+  if(a <= 40) return '31~40';
+  if(a <= 50) return '41~50';
+  if(a <= 60) return '51~60';
+  return '61~99';
+}
+
+function setMode(n) {
+  state.numPeople = n;
+  state.people = {};
+  state.selections = {};
+  state.ageGroups = {};
+  for(let i=1; i<=n; i++) {
+    state.people[i] = {name:'', age:30, gender:''};
+    state.selections[i] = {};
+    for(let a=0; a<5; a++) state.selections[i][a] = {};
+  }
+  generateInfoScreens();
+  go('s2');
+}
+
+function generateInfoScreens() {
+  const container = document.getElementById('infoScreens');
+  container.innerHTML = '';
+  for(let i=1; i<=state.numPeople; i++) {
+    const div = document.createElement('div');
+    div.id = `s${i+1}`;
+    div.className = 'screen';
+    div.innerHTML = `
+      <div class="topbar"><span class="tb-title">${i}번 사람 정보</span><span class="step-badge">STEP ${i}/${state.numPeople}</span></div>
+      <div class="cont">
+        <div style="font-size:14px;color:var(--tx2);margin-bottom:12px;">이름, 나이, 성별을 입력하세요</div>
+        <label style="font-size:12px;font-weight:600;color:var(--tx2);display:block;margin-bottom:6px;">이름</label>
+        <input type="text" id="name_${i}" placeholder="이름" style="width:100%;padding:12px;background:var(--bg3);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;color:#e8eaf6;font-size:14px;font-weight:600;font-family:inherit;outline:none;box-sizing:border-box;"/>
+        <label style="font-size:12px;font-weight:600;color:var(--tx2);display:block;margin-top:12px;margin-bottom:6px;">나이</label>
+        <input type="number" id="age_${i}" value="30" min="10" max="100" style="width:100%;padding:12px;background:var(--bg3);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;color:#e8eaf6;font-size:14px;font-weight:600;font-family:inherit;outline:none;box-sizing:border-box;"/>
+        <label style="font-size:12px;font-weight:600;color:var(--tx2);display:block;margin-top:12px;margin-bottom:6px;">성별</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button onclick="setPerson(${i},'M')" style="padding:12px;background:var(--bg3);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;color:#e8eaf6;font-size:14px;font-weight:600;cursor:pointer;">남성</button>
+          <button onclick="setPerson(${i},'F')" style="padding:12px;background:var(--bg3);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;color:#e8eaf6;font-size:14px;font-weight:600;cursor:pointer;">여성</button>
+        </div>
+        <button class="btn-primary" onclick="savePerson(${i})" style="margin-top:20px;">다음 →</button>
+      </div>
+    `;
+    container.appendChild(div);
+  }
+}
+
+function setPerson(idx, gender) {
+  state.people[idx].gender = gender;
+  savePerson(idx);
+}
+
+function savePerson(idx) {
+  const name = document.getElementById(`name_${idx}`)?.value || `사람${idx}`;
+  const age = parseInt(document.getElementById(`age_${idx}`)?.value || 30);
+  state.people[idx].name = name;
+  state.people[idx].age = age;
+  state.ageGroups[idx] = getAgeGroup(age);
+  if(idx + 1 <= state.numPeople) {
+    go(`s${idx + 2}`);
+  } else {
+    generateTestScreens();
+    startTest();
+  }
+}
+
+function generateTestScreens() {
+  const container = document.getElementById('testScreens');
+  container.innerHTML = '';
+  let screenIdx = 7;
+  for(let person=1; person<=state.numPeople; person++) {
+    for(let area=0; area<5; area++) {
+      for(let img=0; img<6; img++) {
+        const timeLimit = AGE_TIME_LIMIT[state.ageGroups[person]];
+        const imageUrl = getImageUrl(area, img);
+        const div = document.createElement('div');
+        div.id = `s${screenIdx}`;
+        div.className = 'screen test-screen';
+        div.innerHTML = `
+          <div style="position:fixed;top:0;left:0;right:0;background:rgba(7,9,26,.95);padding:12px 18px;border-bottom:1px solid rgba(201,168,76,.22);z-index:5;">
+            <div style="max-width:480px;margin:0 auto;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:13px;font-weight:600;color:var(--gold);">${state.people[person].name} (${state.people[person].age}세)</span>
+                <span style="font-size:11px;color:var(--tx2);">${person}/${state.numPeople}</span>
+              </div>
+              <div class="pbar-wrap"><div class="pbar" style="width:${((screenIdx-6)/30)*100}%"></div></div>
+            </div>
+          </div>
+          <div class="test-card">
+            <div class="img-counter">${AREAS[area]} • ${img+1}/6</div>
+            <div class="img-area">
+              <img src="${imageUrl}" alt="brain-test" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23111535%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%22middle%22 dy=%27.3em%27 fill=%22%2390939e%22 font-size=%2720%27%3EImage Loading...%3C/text%3E%3C/svg%3E'">
+            </div>
+            <div style="font-size:13px;color:var(--tx2);margin-bottom:8px;">얼마나 끌립니까?</div>
+            <div class="timer-display" id="timer_${screenIdx}"></div>
+            <div class="btn-group" id="btns_${screenIdx}">
+              <button class="likert-btn likert-1" onclick="recordScore(${person},${area},${img},5,${screenIdx})">아주<br>좋음</button>
+              <button class="likert-btn likert-2" onclick="recordScore(${person},${area},${img},4,${screenIdx})">좋음</button>
+              <button class="likert-btn likert-3" onclick="recordScore(${person},${area},${img},3,${screenIdx})">보통</button>
+              <button class="likert-btn likert-4" onclick="recordScore(${person},${area},${img},2,${screenIdx})">나쁨</button>
+              <button class="likert-btn likert-5" onclick="recordScore(${person},${area},${img},1,${screenIdx})">아주<br>나쁨</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+        screenIdx++;
+      }
+    }
+  }
+}
+
+function startTest() {
+  go('s7');
+  startTimer(7);
+}
+
+function startTimer(screenIdx) {
+  if(state.currentTimerInterval) clearInterval(state.currentTimerInterval);
+  const personIdx = Math.floor((screenIdx - 7) / 30) + 1;
+  let timeLeft = AGE_TIME_LIMIT[state.ageGroups[personIdx]];
+  const timerEl = document.getElementById(`timer_${screenIdx}`);
+  if(!timerEl) return;
+  const updateTimer = () => {
+    timerEl.textContent = timeLeft + '초';
+    if(timeLeft <= 5) timerEl.classList.add('warning');
+    if(timeLeft <= 0) {
+      clearInterval(state.currentTimerInterval);
+      document.querySelectorAll(`#btns_${screenIdx} .likert-btn`).forEach(b => b.disabled = true);
+      setTimeout(() => autoNextScreen(screenIdx), 1000);
+      return;
+    }
+    timeLeft--;
+  };
+  updateTimer();
+  state.currentTimerInterval = setInterval(updateTimer, 1000);
+}
+
+function autoNextScreen(currentIdx) {
+  const nextIdx = currentIdx + 1;
+  if(nextIdx >= 37) {
+    calculateResult();
+    go('s99');
+  } else {
+    go(`s${nextIdx}`);
+    startTimer(nextIdx);
+  }
+}
+
+function recordScore(person, area, img, score, screenIdx) {
+  if(state.currentTimerInterval) clearInterval(state.currentTimerInterval);
+  state.selections[person][area][img] = score;
+  const nextIdx = screenIdx + 1;
+  if(nextIdx >= 37) {
+    calculateResult();
+    go('s99');
+  } else {
+    go(`s${nextIdx}`);
+    startTimer(nextIdx);
+  }
+}
+
+function calculateResult() {
+  const avgScores = [0, 0, 0, 0, 0];
+  const totalCount = state.numPeople * 6;
+  for(let person=1; person<=state.numPeople; person++) {
+    for(let area=0; area<5; area++) {
+      let sum = 0;
+      for(let img=0; img<6; img++) {
+        sum += state.selections[person][area][img] || 0;
+      }
+      avgScores[area] += sum;
+    }
+  }
+  for(let a=0; a<5; a++) {
+    avgScores[a] = Math.round((avgScores[a] / (totalCount * 5)) * 100);
+  }
+  const overallScore = Math.round(avgScores.reduce((a,b)=>a+b)/5);
+  document.getElementById('rScore').textContent = overallScore;
+  document.getElementById('rGrade').textContent = getGrade(overallScore);
+  document.getElementById('rType').textContent = getType(overallScore);
+  let namesHtml = '';
+  for(let i=1; i<=state.numPeople; i++) {
+    namesHtml += `<div class="ntag">${state.people[i].name}</div>`;
+  }
+  document.getElementById('rNames').innerHTML = namesHtml;
+  drawRadarChart(avgScores);
+  let barsHtml = '';
+  avgScores.forEach((score, idx) => {
+    barsHtml += `
+      <div class="bar-row">
+        <div class="bar-lbl">${AREAS[idx]}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${score}%;background:${AREA_COLORS[idx]}"></div>
+        </div>
+        <div class="bar-val">${score}%</div>
+      </div>
+    `;
+  });
+  document.getElementById('barsArea').innerHTML = barsHtml;
+}
+
+function getGrade(score) {
+  if(score >= 90) return 'S+';
+  if(score >= 80) return 'A+';
+  if(score >= 70) return 'A';
+  if(score >= 60) return 'B';
+  if(score >= 50) return 'C';
+  return 'D';
+}
+
+function getType(score) {
+  if(score >= 80) return '뇌 완벽조화형';
+  if(score >= 70) return '뇌 시너지형';
+  if(score >= 60) return '뇌 협력형';
+  if(score >= 50) return '뇌 보완형';
+  return '뇌 학습형';
+}
+
+function drawRadarChart(scores) {
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  if(state.chartInstance) state.chartInstance.destroy();
+  state.chartInstance = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: AREAS,
+      datasets: [{
+        label: '뇌궁합 지수',
+        data: scores,
+        borderColor: '#c9a84c',
+        backgroundColor: 'rgba(201,168,76,.1)',
+        borderWidth: 2,
+        pointBackgroundColor: '#f0d080',
+        pointBorderColor: '#c9a84c',
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {legend: {display: false}},
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {color: '#90939e', font: {size: 10}},
+          grid: {color: 'rgba(201,168,76,.15)'}
+        }
+      }
+    }
+  });
+}
+
+function go(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+}
+</script>
+
+</body>
+</html>
