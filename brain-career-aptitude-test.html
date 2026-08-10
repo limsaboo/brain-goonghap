@@ -19,7 +19,7 @@
   .screen{
     display:none !important;
     width:100%; min-height:100vh; box-sizing:border-box;
-    flex-direction:column; align-items:center; justify-content:flex-start;
+    flex-direction:column; align-items:center; justify-content:center;
     padding:24px; text-align:center;
   }
   .screen.active{display:flex !important;}
@@ -462,6 +462,9 @@
     <div class="coupon-box">
       <h3>🎟️ 쿠폰 번호를 입력해주세요</h3>
       <p>진로적성 검사를 시작하려면 발급받으신 쿠폰 코드가 필요합니다.<br>(예: BTPA-260730-0001)</p>
+      <div style="margin-bottom:12px;">
+        <button type="button" onclick="adminLogin()" style="width:100%;padding:11px;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.35);border-radius:10px;color:#a9822b;font-size:13px;font-weight:700;cursor:pointer;">🔐 관리자 입장</button>
+      </div>
       <input type="text" id="coupon-input" class="coupon-input" placeholder="쿠폰 코드 입력" autocomplete="off" onkeydown="if(event.key==='Enter'){verifyCoupon();}">
       <div class="coupon-msg" id="coupon-msg"></div>
       <div class="coupon-btns">
@@ -518,6 +521,9 @@
       <select id="in-gender"><option value="">선택</option><option value="남">남성</option><option value="여">여성</option></select>
     </div>
     <div class="form-row"><label>거주지</label><input type="text" id="in-region" placeholder="예: 서울"></div>
+    <div style="width:min(420px,90vw); text-align:center; margin:-6px 0 10px;">
+      <span onclick="adminLogin()" style="font-size:13px; color:#8890b0; text-decoration:underline; cursor:pointer;">관리자이신가요?</span>
+    </div>
     <button class="btn" onclick="startTest()">검사 시작</button>
   </div>
 
@@ -1371,10 +1377,15 @@ function buildDeck(){
 }
 
 /* ---------- Supabase 쿠폰 시스템 ---------- */
+let couponVerified = false;
 const SB_URL = "https://grxqfaeznqqohnlltged.supabase.co";
 const SB_KEY = "sb_publishable_Sgv6BVPo1dOnVICcX1tfzA_gf7T5Z4I";
-const sb = window.supabase.createClient(SB_URL, SB_KEY);
-let couponVerified = false;
+let sb = null;
+try{
+  sb = window.supabase.createClient(SB_URL, SB_KEY);
+}catch(e){
+  console.error('Supabase 초기화 실패 (CDN 로드 문제일 수 있음):', e);
+}
 let verifiedCouponCode = null;
 
 /* ---------- 텔레그램 사용 알림 ---------- */
